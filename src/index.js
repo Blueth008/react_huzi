@@ -155,18 +155,34 @@ class  CommentAPP extends  Component{
     constructor(props){
         super(props);
         this.state={
+            name:'',
+            comment:'',
             comments:[]
         }
     }
 
-    handleGetSubmit(a){
 
-        console.log(a);
+    handleGetName(n){
+        this.setState({
+            name:n
+        })
+    }
+    handleGetComment(c){
+        this.setState({
+            comment:c
+        })
+    }
+    handleGetSubmit(){
+
+        const  {name,comment} = this.state;
 
         this.setState((prevState)=> {
-            prevState.comments.push(a);
+            prevState.comments.push({name:name,comment:comment});
             return {comments: prevState.comments}
-        })
+        });
+        //清空评论
+        this.state.name='';
+        this.state.comment='';
 
     }
 
@@ -176,6 +192,10 @@ class  CommentAPP extends  Component{
         return(
             <div style={{border:'1px solid red',width:'300px'}}>
                 <CommentInput
+                    filename={this.state.name}
+                    filecomment={this.state.comment}
+                    onHandleGetName={this.handleGetName.bind(this)}
+                    onHandleGetComment={this.handleGetComment.bind(this)}
                     onHandleGetSubmit = {this.handleGetSubmit.bind(this)}
                 />
                 <CommentList  comments={this.state.comments} />
@@ -186,55 +206,39 @@ class  CommentAPP extends  Component{
 
 
 class   CommentInput extends  Component{
-    constructor(props) {
-        super(props);
-        this.state={
-            name:'',
-            comment:'',
-        }
-    }
 
 
+    //传递 底层的数据到上层进行分析
     handleGetName(e){
-        this.setState({
-            name:e.target.value
-        })
+        this.props.onHandleGetName(e.target.value)
     }
 
     handleGetComments(e){
-        this.setState({
-            comment:e.target.value
-        })
+        this.props.onHandleGetComment(e.target.value)
     }
 
     handleSubmit(){
         if(this.props.onHandleGetSubmit){
-            const  {name,comment} =this.state;
-            this.props.onHandleGetSubmit({name:name,comment:comment })
+            this.props.onHandleGetSubmit()
         }
-        this.setState({
-            comment:'' ,  //清控评论
-            name:''
-        })
 
     }
 
     render(){
-
 
         return(
             <div  >
                 <div className='commentinput'>
                     <span className='commentinput-name'>用户名：</span>
                     <div className='commentinput-filed'>
-                        <input type='text'  value={this.state.name}   onChange={this.handleGetName.bind(this)}/>
+                        <input type='text'  value={this.props.filename}   onChange={this.handleGetName.bind(this)}/>
                     </div>
                 </div>
                 <div className='commentinput'>
                     <span className='commentinput-name'>评论内容：</span>
                     <div  className='commentinput-filed'>
 
-                        <textarea className='content'  value={  this.state.comment}   onChange={this.handleGetComments.bind(this)} />
+                        <textarea className='content'  value={  this.props.filecomment }   onChange={this.handleGetComments.bind(this)} />
                     </div>
                 </div>
                 <div> <button className='sbutton' onClick={this.handleSubmit.bind(this)}> 发布</button>  </div>
@@ -246,10 +250,7 @@ class   CommentInput extends  Component{
 
 
 class CommentList extends  Component{
-    constructor(props) {
-        super(props);
 
-    }
 
     render(){
 
@@ -264,9 +265,7 @@ class CommentList extends  Component{
 }
 
 class Comment extends  Component{
-    constructor(props) {
-        super(props);
-    }
+
 
     render(){
         const {comment} = this.props;
