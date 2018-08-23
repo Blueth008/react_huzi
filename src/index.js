@@ -144,4 +144,153 @@ ReactDOM.render(
 );
 
 
+/**
+ * 实战做一个评论的框架
+ *  http://huziketang.com/books/react/lesson14
+ * */
+
+
+class  CommentAPP extends  Component{
+
+    constructor(props){
+        super(props);
+        this.state={
+            comments:[]
+        }
+    }
+
+    handleGetSubmit(a){
+
+        console.log(a);
+
+        this.setState((prevState)=> {
+            prevState.comments.push(a);
+            return {comments: prevState.comments}
+        })
+
+    }
+
+    render(){
+
+
+        return(
+            <div style={{border:'1px solid red',width:'300px'}}>
+                <CommentInput
+                    onHandleGetSubmit = {this.handleGetSubmit.bind(this)}
+                />
+                <CommentList  comments={this.state.comments} />
+            </div>
+        )
+    }
+}
+
+
+class   CommentInput extends  Component{
+    constructor(props) {
+        super(props);
+        this.state={
+            name:'',
+            comment:'',
+        }
+    }
+
+
+    handleGetName(e){
+        this.setState({
+            name:e.target.value
+        })
+    }
+
+    handleGetComments(e){
+        this.setState({
+            comment:e.target.value
+        })
+    }
+
+    handleSubmit(){
+        if(this.props.onHandleGetSubmit){
+            const  {name,comment} =this.state;
+            this.props.onHandleGetSubmit({name:name,comment:comment })
+        }
+        this.setState({
+            comment:'' ,  //清控评论
+            name:''
+        })
+
+    }
+
+    render(){
+
+
+        return(
+            <div  >
+                <div className='commentinput'>
+                    <span className='commentinput-name'>用户名：</span>
+                    <div className='commentinput-filed'>
+                        <input type='text'  value={this.state.name}   onChange={this.handleGetName.bind(this)}/>
+                    </div>
+                </div>
+                <div className='commentinput'>
+                    <span className='commentinput-name'>评论内容：</span>
+                    <div  className='commentinput-filed'>
+
+                        <textarea className='content'  value={  this.state.comment}   onChange={this.handleGetComments.bind(this)} />
+                    </div>
+                </div>
+                <div> <button className='sbutton' onClick={this.handleSubmit.bind(this)}> 发布</button>  </div>
+
+            </div>
+        )
+    }
+}
+
+
+class CommentList extends  Component{
+    constructor(props) {
+        super(props);
+
+    }
+
+    render(){
+
+        const comments = this.props.comments;
+        console.log(comments);
+        return(
+            <div >
+                {comments.map((comment,i)=><Comment  key={i}  comment={comment} />) }
+            </div>
+        )
+    }
+}
+
+class Comment extends  Component{
+    constructor(props) {
+        super(props);
+    }
+
+    render(){
+        const {comment} = this.props;
+        return(
+            <div>
+                <div>
+                    <span  style={{textAlign:'center', display: 'inline-block' }}>{comment.name}</span>:
+                    <div  style={{display: 'inline-block',color:'blue'}}>
+                        {comment.comment}
+                    </div>
+                </div>
+            </div>
+
+        )
+    }
+}
+
+
+
+ReactDOM.render(
+    <CommentAPP />,
+    document.getElementById('comment')
+);
+
+
+
 registerServiceWorker();
