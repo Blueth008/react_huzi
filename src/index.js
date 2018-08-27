@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
-
+import PropTypes from 'prop-types';
 import './index.css';
 import App from './App';
 import registerServiceWorker from './registerServiceWorker';
@@ -22,16 +22,16 @@ ReactDOM.render(<App />, document.getElementById('root'));
 
 class Dog extends  Component {
 
-    bark(){
+    _bark(){
         console.log('barking');
     }
-    run(){
+    _run(){
         console.log('running')
     }
 
     handleClickDog(){
-        this.bark();
-        this.run();
+        this._bark();
+        this._run();
     }
 
     render(){
@@ -157,19 +157,56 @@ class  CommentAPP extends  Component{
         super(props);
         this.state={
             comments:[]
+
         }
     }
 
     handleGetSubmit(a){
-
-        console.log(a);
-
+       // console.log(a);
         this.setState((prevState)=> {
-            prevState.comments.push(a);
-            return {comments: prevState.comments}
+            prevState.comments.push(a);    //删除以前一个数组中的 被删除的一个元素
+            return {comments: prevState.comments}   //重新设定新的 comments
         })
 
     }
+
+    _loadLocalStorage(){
+        var arr=[];
+        for(var i=0;i<localStorage.length;i++) {
+            var sitename = localStorage.key(i);
+
+            // 甄别属于输入框的 item的
+            if((/Input-Comment/).test(sitename))    //检测key中是否存在我们需要的 Input类型的值
+            {
+                var siteurl= localStorage.getItem(sitename);
+                // JSON.parse() 方法用于将一个 JSON 字符串转换为对象。
+               // var a= JSON.parse(siteurl);
+                //  console.log( typeof(a));
+                //  console.log(a);
+                  arr=JSON.parse(siteurl);   //转换为数组
+
+            }
+
+
+        }
+        return arr;
+    }
+    componentWillMount(){  //在挂在渲染之前 获取本地的 localStorage  然后添加到 状态的 comments数组 ，后面的渲染通过 WillUpdate 更新渲染
+
+        this.setState({comments:this._loadLocalStorage()})
+
+    }
+
+    handleDelete(index){
+
+        this.setState( (prevState)=> {
+                prevState.comments.splice(index, 1);
+                return {comments: prevState.comments}
+            }
+          )
+
+    }
+
 
     render(){
 
@@ -179,7 +216,9 @@ class  CommentAPP extends  Component{
                 <CommentInput
                     onHandleGetSubmit = {this.handleGetSubmit.bind(this)}
                 />
-                <CommentList  comments={this.state.comments} />
+                <CommentList  comments={this.state.comments}
+                              onHandleDelete={ this.handleDelete.bind(this)}
+                />
             </div>
         )
     }
@@ -192,6 +231,7 @@ class  CommentInput extends  Component{
         this.state={
             name:'',
             comment:'',
+            timeDiff:''
         }
     }
 
@@ -199,6 +239,7 @@ class  CommentInput extends  Component{
     handleGetName(e){
         this.setState({
             name:e.target.value
+
         })
     }
 
@@ -208,16 +249,53 @@ class  CommentInput extends  Component{
         })
     }
 
+    _getNowTime(){
+        let t = new Date();
+        var t0 = t.getFullYear();
+        var t1= t.getMonth()+1;
+        var t2= t.getDate();
+        var t3= t.getHours();
+        var t4= t.getMinutes();
+        var t5= t.getSeconds();
+
+        t1= t1<=9 ?'0'+t1:t1;
+        t2= t2<=9 ?'0'+t2:t2;
+
+        return t0+'-'+t1+'-'+t2+' '+t3+':'+t4+':'+t5;
+    }
+
     handleSubmit(){
-        if(this.props.onHandleGetSubmit){
-            const  {name,comment} =this.state;
-            this.props.onHandleGetSubmit({name:name,comment:comment })
+
+
+         let timeDiff = this._getNowTime();
+
+        const  {name,comment} =this.state;
+
+        if(name==='' || comment===''){
+                alert(' 请输入非空的用户名或者评论内容 ');
+                return;
         }
+
+    //    console.log(timeDiff);  显示当前发布的时间
+        if(this.props.onHandleGetSubmit){    //传入参数
+              this.props.onHandleGetSubmit({name:name,comment:comment,time: timeDiff})
+        }
+
+        //JSON.stringify() 方法用于将 JavaScript 值转换为 JSON 字符串。
+
+        var local= JSON.parse(localStorage.getItem("Input-Comment")) || [];
+        local.push({name:name,comment:comment,time: timeDiff});
+        localStorage.setItem('Input-Comment',JSON.stringify( local ) );
+
         this.setState({
             comment:'' ,  //清控评论
             name:''
-        })
+        });
+        this.infous.focus();
+    }
 
+    componentDidMount(){
+        this.infous.focus();     //渲染完毕后自动对焦
     }
 
     render(){
@@ -228,7 +306,7 @@ class  CommentInput extends  Component{
                 <div className='commentinput'>
                     <span className='commentinput-name'>用户名：</span>
                     <div className='commentinput-filed'>
-                        <input type='text'  value={this.state.name}   onChange={this.handleGetName.bind(this)}/>
+                        <input type='text'  ref={(infous)=>{this.infous=infous}} value={this.state.name}   onChange={this.handleGetName.bind(this)}/>
                     </div>
                 </div>
                 <div className='commentinput'>
@@ -246,15 +324,29 @@ class  CommentInput extends  Component{
 }
 
 
+
+
+
 class CommentList extends  Component{
+
+    handleDelete(index){
+
+        this.props.onHandleDelete(index);
+    }
+
 
     render(){
 
         const comments = this.props.comments;
-        console.log(comments);
+       // console.log(comments);
         return(
             <div >
-                {comments.map((comment,i)=><Comment  key={i}  comment={comment} />) }
+                {comments.map((comment,i)=>
+                    <Comment  key={i}  index={i}
+                              comment={comment}
+                              onHandleDelete={ this.handleDelete.bind(this)}
+                    />)
+                }
             </div>
         )
     }
@@ -263,16 +355,41 @@ class CommentList extends  Component{
 class Comment extends  Component{
 
 
+
+
+    handleDelete(){
+        let index = this.props.index;
+        this.props.onHandleDelete(index);
+
+        var local= JSON.parse(localStorage.getItem("Input-Comment")) || [];
+       // console.log(local);
+        //删除当前选中的的一行
+        local.splice(index,1);
+       // console.log(local);
+        //输出到localStorage 中 保存
+       localStorage.setItem('Input-Comment',JSON.stringify( local ) );
+
+
+
+    }
+
+
+
     render(){
         const {comment} = this.props;
         return(
             <div>
-                <div>
-                    <span  style={{textAlign:'center', display: 'inline-block' }}>{comment.name}</span>:
-                    <div  style={{display: 'inline-block',color:'blue'}}>
+                <div style={{position:'relative',margin:'3px',padding:'2px',fontSize:'18px',border:'1px dashed #FF802B'}}>
+                    <span  style={{textAlign:'center' }}>{comment.name}</span> :
+                    <p  style={{border:'1px solid pink',color:'blue',margin:'3px',wordBreak:'break-all'}}>
                         {comment.comment}
+                    </p>
+                    <p style={{padding:'0 0 0 40%',fontSize:'10px',margin:'0'}}> 时间戳：{comment.time}</p>
+                    <div  style={{position:'absolute',right:'10px',top:'-1px',color:'red'}}>
+                        <button style={{fontSize:'10px',outline:'none',borderRadius:'3px'}} onClick={this.handleDelete.bind(this)}> 删除 </button>
                     </div>
                 </div>
+
             </div>
 
         )
@@ -366,16 +483,28 @@ ReactDOM.render(
     document.getElementById('percent')
 );
 
-/*  挂在阶段的生命周期
- componentWillMount：组件挂载开始之前，也就是在组件调用 render 方法之前调用。
- componentDidMount：组件挂载完成以后，也就是 DOM 元素已经插入页面后调用。
- componentWillUnmount：组件对应的 DOM 元素从页面中删除之前调用。
+/*  组件的生命周期可分成三个状态：
+   https://react.docschina.org/docs/react-component.html
 
+        Mounting：已插入真实 DOM
+        Updating：正在被重新渲染
+        Unmounting：已移出真实 DOM
+生命周期的方法有：
 
- shouldComponentUpdate(nextProps, nextState)：你可以通过这个方法控制组件是否重新渲染。如果返回 false 组件就不会重新渲染。这个生命周期在 React.js 性能优化上非常有用。
-componentWillReceiveProps(nextProps)：组件从父组件接收到新的 props 之前调用。
-componentWillUpdate()：组件开始重新渲染之前调用。
-componentDidUpdate()：组件重新渲染并且把更改变更到真实的 DOM 以后调用。
+    componentWillMount 在渲染前调用,在客户端也在服务端。
+
+    componentDidMount : 在第一次渲染后调用，只在客户端。之后组件已经生成了对应的DOM结构，可以通过this.getDOMNode()来进行访问。 如果你想和其他JavaScript框架一起使用，可以在这个方法中调用setTimeout, setInterval或者发送AJAX请求等操作(防止异步操作阻塞UI)。
+
+    componentWillReceiveProps 在组件接收到一个新的 prop (更新后)时被调用。这个方法在初始化render时不会被调用。
+
+    shouldComponentUpdate 返回一个布尔值。在组件接收到新的props或者state时被调用。在初始化时或者使用forceUpdate时不被调用。
+    可以在你确认不需要更新组件时使用。
+
+    componentWillUpdate 在组件接收到新的props或者state但还没有render时被调用。在初始化时不会被调用。
+
+    componentDidUpdate 在组件完成更新后立即调用。在初始化时不会被调用。
+
+    componentWillUnmount 在组件从 DOM 中移除的时候立刻被调用。
 * */
 
 //时间
