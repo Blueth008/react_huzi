@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
 import './index.css';
-import App from './App';
+import App,{WithWrapped} from './App';
 import registerServiceWorker from './registerServiceWorker';
 
 ReactDOM.render(<App />, document.getElementById('root'));
@@ -591,5 +591,44 @@ class BlackContainer extends  Component{
 ReactDOM.render(
     <BlackContainer/>,
     document.getElementById('propschildren')
-)
+);
+
+/*
+* 高阶组件
+* */
+
+localStorage.setItem('username','ReactTest');
+
+
+
+class Welcome extends Component{
+    render(){
+        return(
+            <div>
+                welcome {this.props.username }
+            </div>
+        )
+
+    }
+}
+//组件转换
+ Welcome = WithWrapped(Welcome);
+
+ReactDOM.render(
+    <Welcome />,
+    document.getElementById('welcome')
+);
+
+
+
+
+
+
+
+
+
+
+
+
+
 registerServiceWorker();
