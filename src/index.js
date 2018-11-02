@@ -150,7 +150,7 @@ ReactDOM.render(
  *  http://huziketang.com/books/react/lesson14
  * */
 
-
+/*
 class  CommentAPP extends  Component{
 
     constructor(props){
@@ -402,7 +402,7 @@ ReactDOM.render(
     <CommentAPP />,
     document.getElementById('comment')
 );
-
+*/
 //Step 2
 // lesson 9百分比转换器
 /*
@@ -567,7 +567,7 @@ class BlackBlockContainer extends Component{
     render(){
         return(
            <div >
-               {this.props.children.map( (el,i)=><div key={i} className='containerborder'>{el}</div>    )}
+               {this.props.children.map( (el,i)=><div key={i} className='containerborder'>{i}{el}</div>    )}
            </div>
 
         )
@@ -620,12 +620,590 @@ ReactDOM.render(
 );
 
 
+//状态提升 react官方
+
+function BoilingVerdict(props) {
+    if(( props.scale==='c'&&props.celsius >= 100)||(props.scale==='f'&&props.celsius >= 212) ){
+        return <p>水会被烧开</p>
+    }else return <p>水不会被烧开</p>
+}
+
+const scaleNames ={
+    c:'Celsius',
+    f:'Fahrenheit'
+};
+
+function toCelsius(fahrenheit ) {
+     return (fahrenheit-32)*5/9;
+}
+function toFahrenheit(celsius) {
+    return (celsius*9/5)+32;
+}
+
+class Temperature extends React.Component {
+
+    constructor(props){
+        super(props);
+
+
+    }
+
+    handleChange(e){
+        this.props.onHandleChange(e.target.value);
+
+    }
+
+    render(){
+
+        let scale = this.props.scale;
+
+
+        return(
+
+            <fieldset>
+                <legend>输入一个{scaleNames[scale]}温度</legend>
+                <input value={this.props.temperature} onChange={this.handleChange.bind(this)} />
+                <BoilingVerdict  scale={this.props.scale}  celsius={parseFloat(this.props.temperature)}/>
+            </fieldset>
+
+        )
+
+
+    }
+}
+
+class Calculator extends React.Component{
+
+    constructor(props){
+        super(props);
+        this.state={
+            temperature:'',
+            scale:'c'
+        }
+    }
+
+    HandleChangeC(value){
+        this.setState({
+            scale:'c',temperature:value
+        })
+
+    }
+    HandleChangeF(value){
+        this.setState({
+            scale:'f',temperature:value
+        })
+
+    }
+
+
+    render()   {
+        const {scale,temperature} = this.state;
+//简单转换
+        const celsius = scale ==='f'? (temperature-32)/1.8: temperature;
+        const fahrenheit = scale ==='c'?(temperature ===''? temperature:(temperature*1.8+32)):temperature;
+
+        /* C 和 F 是 固定的提示显示   change的 c 和 f 是告诉主键我们改变的是那个 然后转换另一个  */
+        return (
+            <div>
+              <Temperature scale='c'  temperature={celsius} onHandleChange={this.HandleChangeC.bind(this)} />
+              <Temperature scale='f'  temperature={fahrenheit} onHandleChange={this.HandleChangeF.bind(this)} />
+               <p>在Fahrenheit中 需要再次分别在底层划分 C和F的区别</p>
+            </div>
+        )
+    }
+}
 
 
 
+ReactDOM.render(
+    <Calculator/>,
+    document.getElementById('stateup')
+
+);
+//  https://react.docschina.org/docs/thinking-in-react.html
+
+
+class SearchBar extends React.Component{
+
+
+    handleChangeInput(e){
+        this.props.onHandleChangeInput(e.target.value);
+
+    }
+    handleChangeCheck(e){
+        this.props.onHandleChangeCheck(e.target.checked)
+    }
+
+    render(){
+        return(
+            <form>
+                <input type='text' value={this.props.filterText}  onChange={this.handleChangeInput.bind(this)} placeholder="Search..."/><br/>
+                <input type='checkbox' value="" onChange={this.handleChangeCheck.bind(this)}  />Only show products in stock
+            </form>
+        )
+    }
+}
+
+class ProductCategoryRow extends React.Component{
+
+
+    render(){
+        return (
+            <tr>
+                <td colSpan='2'>
+                    <strong>    {this.props.P.category}</strong>
+                    </td>
+            </tr>
+
+        )
+
+    }
+}
+
+class ProductRow extends React.Component{
+
+
+    render(){
+
+        //判断 缺货
+        var name = this.props.P.stocked ? this.props.P.name:
+            <span style={{color:"red"}}>{this.props.P.name}</span>
+        return(
+            <tr>
+                <td> {name} </td>
+                <td> {this.props.P.price} </td>
+            </tr>
+
+        )
+    }
+}
+
+
+class ProductsTable extends  React.Component{
 
 
 
+    render(){
+
+        const {products,filterText,inStockOnly} = this.props;
+        var lastCategory = null;
+        var row=[];
+        products.forEach(function (product) {
+
+            if(product.name.indexOf(filterText)===-1 || (!product.stocked && inStockOnly)){
+                return;   //过滤 input 的输入词:没有找到 返回空
+            }
+
+            if(product.category !== lastCategory){
+                row.push(<ProductCategoryRow P={product} key={product.category}/>)
+            }
+            row.push(<ProductRow P={product} key={product.name}/>)
+            lastCategory = product.category;
+
+        });
+
+
+
+        return(
+            <table style={{width:'230px',textAlign:'center'}}>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Price</th>
+                    </tr>
+                </thead>
+                 <tbody>
+                 {row}
+                 </tbody>
+
+            </table>
+
+        )
+
+    }
+}
+
+
+class FilterableProductTable extends React.Component{
+    constructor(props){
+        super(props);
+
+        this.state={
+            filterText:'',
+            inStockOnly:false
+        }
+    }
+
+
+    handleChange(val){
+       this.setState({
+           filterText:val
+       })
+    }
+    handleChangeCheck(chk){
+        this.setState({
+            inStockOnly:chk
+        })
+    }
+
+
+    render(){
+        return(
+            <div style={{border:"1px solid orange",width:'250px',padding:'10px'}}>
+                <SearchBar
+                    filterText={this.state.filterText}
+                    onHandleChangeInput={this.handleChange.bind(this)}
+                    onHandleChangeCheck={this.handleChangeCheck.bind(this)}
+                />
+                <ProductsTable
+                    filterText={this.state.filterText}
+                    inStockOnly={this.state.inStockOnly}
+                    products={this.props.products}/>
+
+            </div>
+
+        )
+
+    }
+
+}
+var PRODUCTS = [
+    {category: 'Sporting Goods', price: '$49.99', stocked: true, name: 'Football'},
+    {category: 'Sporting Goods', price: '$9.99', stocked: true, name: 'Baseball'},
+    {category: 'Sporting Goods', price: '$29.99', stocked: false, name: 'Basketball'},
+    {category: 'Electronics', price: '$99.99', stocked: true, name: 'iPod Touch'},
+    {category: 'Electronics', price: '$399.99', stocked: false, name: 'iPhone 5'},
+    {category: 'Electronics', price: '$199.99', stocked: true, name: 'Nexus 7'}
+];
+
+ReactDOM.render(
+    <FilterableProductTable  products={PRODUCTS}/>,
+    document.getElementById('products')
+
+);
+
+//https://blog.csdn.net/a153375250/article/details/52667739?utm_source=blogxgwz2  简单实战 添加个人信息
+
+class CommentInput extends React.Component{
+
+    HandleChangeInput(){
+        this.props.onHandleChangeInput();
+      //  console.log(this.props.input)
+    }
+    ChangeInput(e){
+        this.props.onChangeStateName(e.target.value);
+    }
+    ChangeContent(e){
+        this.props.onChangeStateContent(e.target.value);
+
+    }
+    render(){
+        return(
+            <form>
+                <div><span>用户名:</span>
+                    <input type='text'    onChange={this.ChangeInput.bind(this)}/>
+                </div>
+                <div><span>用户评论:</span>
+                    <textarea  onChange={this.ChangeContent.bind(this)}>{''}</textarea>
+                </div>
+                <div>
+                    <input type='button' onClick={this.HandleChangeInput.bind(this)} value={'发布'} />
+                </div>
+            </form>
+
+        )
+    }
+}
+
+
+class CommentList extends React.Component{
+
+    render(){
+
+        // const lists = [
+        //     { 'name': 'Jerry', content: 'Hello'},
+        //     { name: 'Tomy', content: 'World'},
+        //     { name: 'Lucy', content: 'Good'}
+        // ]
+        console.log( this.props.lists);
+        return(
+            <div>
+                {this.props.lists.map( (list,index)=><p key={list.name+index}><span>{list.name}:</span>{list.content} <hr/></p> )}
+
+            </div>
+        )
+    }
+}
+
+class CommentApp extends React.Component{
+    constructor(props){
+        super(props);
+
+        this.state={
+            Comments:[{ name: 'Lucy', content: 'Good'}],
+            comments_name:'',
+            comments_content:''
+
+        };   //评论数组
+    }
+
+
+    ChangeStateName(val){
+        this.setState({
+            comments_name:val
+        })
+    }
+
+    ChangeStateContent(val){
+
+        this.setState({
+            comments_content:val
+        })
+
+    }
+
+
+    handleInput(){
+
+        console.log(this.state.Comments);
+        this.setState(
+
+            (prevState)=>{
+                prevState.Comments.push({'name':prevState.comments_name, 'content':prevState.comments_content});
+                return prevState.Comments
+              }
+
+        );
+    }
+
+
+    render(){
+        return(
+            <div>
+                <CommentInput
+                    onChangeStateName={this.ChangeStateName.bind(this)}
+                    onChangeStateContent={this.ChangeStateContent.bind(this)}
+                    onHandleChangeInput={this.handleInput.bind(this)}
+                />
+                <CommentList  lists={this.state.Comments} />
+            </div>
+        )
+    }
+
+
+}
+
+ReactDOM.render(
+    <CommentApp />,
+    document.getElementById('comment')
+);
+
+
+
+//Tic Tac Toe 三子棋
+class Square extends React.Component {
+/* 单独测试用
+    constructor(props) {
+        super();
+        this.state={value:null}
+    }
+
+
+    render(){
+        return(
+            <button className='square' onClick={()=>{this.setState({value:'X'})}}>
+                {this.state.value}
+            </button>
+        )
+    }
+*/
+
+    render(){
+        if(this.props.isHightLight){
+        return(
+            <button className='square' onClick={this.props.onClick} style={{color:"red"}}>
+                <strong>  {this.props.value} </strong>
+            </button>
+        )} else{
+
+        return(
+            <button className='square' onClick={this.props.onClick}>
+                <strong>  {this.props.value} </strong>
+            </button>
+        )}
+}
+
+
+}
+
+class Board extends React.Component{
+
+
+    _renderSquare(i){
+        return <Square value={this.props.squares[i]} onClick={()=>this.props.onClick(i)} isHightLight={this.props.winnerLine.includes(i)}/>
+    };
+
+    render(){
+        return(
+           <div >
+                <div className='board-row'>
+                    {this._renderSquare(0)}
+                    {this._renderSquare(1)}
+                    {this._renderSquare(2)}
+                </div>
+               <div className='board-row'>
+                   {this._renderSquare(3)}
+                   {this._renderSquare(4)}
+                   {this._renderSquare(5)}
+               </div>
+               <div className='board-row'>
+                   {this._renderSquare(6)}
+                   {this._renderSquare(7)}
+                   {this._renderSquare(8)}
+               </div>
+
+           </div>
+
+        )
+    }
+}
+
+
+
+class Game extends React.Component{
+
+    constructor(){
+        super();
+        this.state={
+            history:[
+                {squares: Array(9).fill(null),
+                  lastStep:'Game Start'
+                }
+            ],
+            nowStep:0,
+            xIsNext:true,
+            sort:false   //false 是正序 true是反序
+        }
+    }
+
+    handleClick(i){
+     //   const sq0 = this.state.squares.slice();//复制一个新数组
+
+        const history= this.state.history.slice(0,this.state.nowStep+1); //当前位置+1才是全部数组
+        const current = history[history.length-1];
+        const squares = current.squares.slice();
+
+
+        if(calculateWinner(squares).winner||squares[i]){
+            return;
+        }
+        console.log(history);
+        squares[i] = this.state.xIsNext?'X':'O';
+        const desc = squares[i] +' Move # '+i;
+        this.setState({
+            history :history.concat([{squares:squares,lastStep:desc}]),   //生成下一步
+            xIsNext:!this.state.xIsNext,
+            nowStep:history.length   //起始位置就有一个空数组 长度1
+        });
+
+    };
+
+
+    //撤退 返回
+    jumpTo(step){
+        console.log(this.state.nowStep+" : "+step+' sort: '+this.state.sort+' length: '+this.state.history.length);
+        this.setState({
+            nowStep:this.state.sort?this.state.history.length- step-1  :step,  //
+            xIsNext: (step % 2) === 0   //判断当前是奇数步还是偶数步  偶数X 奇数O
+        })
+    }
+    sortLine(){
+       this.setState({
+           sort:!this.state.sort
+       })
+    }
+
+    render(){
+
+
+        let history= this.state.history;
+        const current = history[this.state.nowStep];
+        const  winner=calculateWinner(current.squares).winner;  //遍历数组求赢家
+        const winnerLine =calculateWinner(current.squares).winnerLine;
+        let status;
+        if(winner){
+            status = 'Winner is:'+winner;
+        }else {
+            status = 'Next player: ' + (this.state.xIsNext ? 'X' : 'O');
+        }
+
+        if (this.state.sort){
+            history = this.state.history.slice();
+            history.reverse();
+            console.log(history)
+        }
+        const moves = history.map((step,move)=>{
+            const desc =step.lastStep;
+            return(
+                <li key={move} >
+                    <a href='#game' onClick={()=>this.jumpTo(move)} >{desc}</a>
+                </li>
+            )
+            }
+        );
+
+
+
+        return(
+            <div className='game'>
+                <div className='game-board'>
+                    <Board squares={current.squares} onClick={(i)=>this.handleClick(i)}  winnerLine={winnerLine} />
+                </div>
+
+                <div className='game-info'>
+
+                    <div>
+                        {status}
+                    </div>
+                    <button onClick={()=>this.sortLine()}>Sort</button>
+                    <div>
+                        <ol start="0">
+                            {moves}
+                        </ol>
+                    </div>
+                </div>
+            </div>
+
+        )
+    }
+
+}
+
+ReactDOM.render(
+    <Game/>,
+    document.getElementById('game')
+);
+//计算胜利者
+function calculateWinner(squares) {
+    const lines=[
+        [0, 1, 2],
+        [3, 4, 5],
+        [6, 7, 8],
+        [0, 3, 6],
+        [1, 4, 7],
+        [2, 5, 8],
+        [0, 4, 8],
+        [2, 4, 6],
+    ];
+
+    for(let i=0;i<lines.length;i++){
+        const [a,b,c] = lines[i];
+        if(squares[a] &&squares[a]===squares[b]&&squares[a] ===squares[c]){
+            return {winner:squares[a],winnerLine:[a,b,c]};
+        }
+    }
+    return {winner:null,winnerLine:[]};
+}
 
 
 
